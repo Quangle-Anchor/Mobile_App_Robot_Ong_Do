@@ -3,12 +3,10 @@ import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../providers/robot_stream_provider.dart';
-import 'home/home_screen.dart';
-import 'confirmation_screen.dart';
-import 'robot_writing/robot_writing_screen.dart';
-import 'completion_screen.dart';
-import 'dashboard_screen.dart';
+import 'progress_flow_screen.dart';
+import 'shape_drawing_screen.dart';
 import 'history_screen.dart';
+import 'dashboard_screen.dart';
 import 'settings_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -32,18 +30,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   String _getScreenTitle(int index) {
     switch (index) {
       case 0:
-        return "Chọn chữ thư pháp";
+        return "Tiến trình viết";
       case 1:
-        return "Xác nhận lựa chọn";
+        return "Vẽ hình";
       case 2:
-        return "Robot đang viết";
-      case 3:
-        return "Hoàn thành";
-      case 4:
         return "Lịch sử viết thư pháp";
-      case 5:
+      case 3:
         return "Dashboard CalliBot";
-      case 6:
+      case 4:
         return "Cài đặt hệ thống";
       default:
         return "CalliBot";
@@ -57,10 +51,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     // Screens list
     final List<Widget> screens = [
-      HomeScreen(onNavigate: setIndex),
-      ConfirmationScreen(onNavigate: setIndex),
-      RobotWritingScreen(onNavigate: setIndex),
-      CompletionScreen(onNavigate: setIndex),
+      ProgressFlowScreen(onNavigateOutside: setIndex),
+      const ShapeDrawingScreen(),
       const HistoryScreen(),
       const DashboardScreen(),
       const SettingsScreen(),
@@ -68,10 +60,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     // Navigation Menu Items mapping AppLayout.tsx
     final List<Map<String, dynamic>> menuItems = [
-      {"label": "Chọn chữ", "icon": Icons.edit_note},
-      {"label": "Xác nhận", "icon": Icons.check_circle_outline},
-      {"label": "Robot đang viết", "icon": Icons.smart_toy_outlined},
-      {"label": "Hoàn thành", "icon": Icons.emoji_events_outlined},
+      {"label": "Tiến trình viết", "icon": Icons.timeline},
+      {"label": "Vẽ hình", "icon": Icons.category_outlined},
       {"label": "Lịch sử", "icon": Icons.history_rounded},
       {"label": "Dashboard", "icon": Icons.dashboard_outlined},
       {"label": "Cài đặt", "icon": Icons.settings_outlined},
@@ -445,11 +435,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ? BottomNavigationBar(
               currentIndex: _currentIndex >= 4 ? 3 : _currentIndex, // Collapse complex views on mobile bottom bar
               onTap: (index) {
-                if (index == 3) {
-                  setIndex(4); // Open history screen for index 3 on mobile
-                } else {
-                  setIndex(index);
-                }
+                setIndex(index);
               },
               backgroundColor: AppColors.card,
               selectedItemColor: AppColors.primary,
@@ -458,10 +444,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.0),
               unselectedLabelStyle: const TextStyle(fontSize: 11.0),
               items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.edit_note), label: "Chọn chữ"),
-                BottomNavigationBarItem(icon: Icon(Icons.check_circle_outline), label: "Xác nhận"),
-                BottomNavigationBarItem(icon: Icon(Icons.smart_toy_outlined), label: "Robot viết"),
+                BottomNavigationBarItem(icon: Icon(Icons.timeline), label: "Thực hiện"),
+                BottomNavigationBarItem(icon: Icon(Icons.category_outlined), label: "Vẽ hình"),
                 BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: "Lịch sử"),
+                BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: "Dashboard"),
               ],
             )
           : null,
