@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../providers/robot_stream_provider.dart';
+import '../providers/history_provider.dart';
 import '../widgets/custom_card.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -11,52 +12,79 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final robotProvider = Provider.of<RobotStreamProvider>(context);
+    final historyProvider = Provider.of<HistoryProvider>(context);
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 992;
     final isTablet = width >= 600;
 
-    // 1. KPI Stats definition
+    // ── Tính KPI từ lịch sử thật ──
+    final logs = historyProvider.allLogs;
+    final totalToday = logs.length;
+    final totalCompleted =
+        logs.where((l) => l['status'] == 'Hoàn thành').length;
+    final totalError =
+        logs.where((l) => l['status'] == 'Lỗi' || l['status'] == 'Đã hủy').length;
+
+    // Tìm chữ được chọn nhiều nhất
+    final charCounts = <String, int>{};
+    for (final log in logs) {
+      final c = log['char']?.toString() ?? '';
+      if (c.isNotEmpty) charCounts[c] = (charCounts[c] ?? 0) + 1;
+    }
+    String mostChosenChar = '—';
+    if (charCounts.isNotEmpty) {
+      mostChosenChar = charCounts.entries
+          .reduce((a, b) => a.value >= b.value ? a : b)
+          .key;
+    }
+
+    // 1. KPI Stats
     final List<Map<String, dynamic>> kpiStats = [
       {
-        "label": "Tổng lượt viết hôm nay",
-        "value": "48",
-        "icon": Icons.trending_up,
-        "color": AppColors.primary,
-        "bg": AppColors.primary.withValues(alpha: 0.1),
+        'label': 'Tổng lượt viết hôm nay',
+        'value': '$totalToday',
+        'icon': Icons.trending_up,
+        'color': AppColors.primary,
+        'bg': AppColors.primary.withValues(alpha: 0.1),
       },
       {
-        "label": "Được chọn nhiều nhất",
-        "value": "Tâm",
-        "icon": Icons.analytics_outlined,
-        "color": AppColors.gold,
-        "bg": AppColors.gold.withValues(alpha: 0.15),
-        "isCalli": true,
+        'label': 'Được chọn nhiều nhất',
+        'value': mostChosenChar,
+        'icon': Icons.analytics_outlined,
+        'color': AppColors.gold,
+        'bg': AppColors.gold.withValues(alpha: 0.15),
+        'isCalli': true,
       },
       {
-        "label": "Trạng thái robot",
-        "value": robotProvider.isConnected ? "Sẵn sàng" : "Ngoại tuyến",
-        "icon": Icons.smart_toy_outlined,
-        "color": robotProvider.isConnected ? AppColors.success : AppColors.destructive,
-        "bg": (robotProvider.isConnected ? AppColors.success : AppColors.destructive).withValues(alpha: 0.1),
+        'label': 'Trạng thái robot',
+        'value': robotProvider.isConnected ? 'Sẵn sàng' : 'Ngoại tuyến',
+        'icon': Icons.smart_toy_outlined,
+        'color': robotProvider.isConnected
+            ? AppColors.success
+            : AppColors.destructive,
+        'bg': (robotProvider.isConnected
+                ? AppColors.success
+                : AppColors.destructive)
+            .withValues(alpha: 0.1),
       },
       {
-        "label": "Lượt hoàn thành",
-        "value": "45",
-        "icon": Icons.check_circle_outline,
-        "color": AppColors.tech,
-        "bg": AppColors.tech.withValues(alpha: 0.1),
+        'label': 'Lượt hoàn thành',
+        'value': '$totalCompleted',
+        'icon': Icons.check_circle_outline,
+        'color': AppColors.tech,
+        'bg': AppColors.tech.withValues(alpha: 0.1),
       },
       {
-        "label": "Lượt lỗi",
-        "value": "1",
-        "icon": Icons.error_outline,
-        "color": AppColors.destructive,
-        "bg": AppColors.destructive.withValues(alpha: 0.1),
+        'label': 'Lượt lỗi / hủy',
+        'value': '$totalError',
+        'icon': Icons.error_outline,
+        'color': AppColors.destructive,
+        'bg': AppColors.destructive.withValues(alpha: 0.1),
       },
     ];
 
     Widget buildKpiCard(Map<String, dynamic> kpi) {
-      final isCalli = kpi["isCalli"] == true;
+      final isCalli = kpi['isCalli'] == true;
       return CustomCard(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -66,14 +94,15 @@ class DashboardScreen extends StatelessWidget {
               height: 38.0,
               width: 38.0,
               decoration: BoxDecoration(
-                color: kpi["bg"] as Color,
+                color: kpi['bg'] as Color,
                 borderRadius: AppStyles.radiusSm,
               ),
-              child: Icon(kpi["icon"] as IconData, color: kpi["color"] as Color, size: 20.0),
+              child: Icon(kpi['icon'] as IconData,
+                  color: kpi['color'] as Color, size: 20.0),
             ),
             const SizedBox(height: 12.0),
             Text(
-              kpi["label"] as String,
+              kpi['label'] as String,
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.bold,
@@ -82,30 +111,31 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4.0),
             Text(
-              kpi["value"] as String,
+              kpi['value'] as String,
               style: isCalli
                   ? AppStyles.calligraphyStyle.copyWith(fontSize: 28.0)
-                  : const TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                  : const TextStyle(
+                      fontSize: 22.0,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink),
             ),
           ],
         ),
       );
     }
 
-    // 2. Bar Chart Selection Data
-    final barChartItems = [
-      {"char": "Tâm", "val": 16},
-      {"char": "Phúc", "val": 12},
-      {"char": "Đức", "val": 8},
-      {"char": "Trí", "val": 5},
-      {"char": "An", "val": 4},
-      {"char": "Lộc", "val": 3},
-    ];
-    const double maxBarVal = 16.0;
+    // 2. Bar Chart từ lịch sử thật (top 6 chữ)
+    final sortedChars = charCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final barChartItems = sortedChars.take(6).map((e) {
+      return {'char': e.key, 'val': e.value};
+    }).toList();
+    final double maxBarVal =
+        barChartItems.isEmpty ? 1.0 : (barChartItems.first['val'] as num).toDouble();
 
     Widget buildBarRow(Map<String, dynamic> item) {
-      final val = item["val"] as int;
-      final percentWidth = val / maxBarVal;
+      final val = item['val'] as int;
+      final percentWidth = maxBarVal > 0 ? val / maxBarVal : 0.0;
 
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -114,8 +144,9 @@ class DashboardScreen extends StatelessWidget {
             SizedBox(
               width: 44.0,
               child: Text(
-                item["char"] as String,
-                style: AppStyles.calligraphyStyle.copyWith(fontSize: 22.0, height: 1.1),
+                item['char'] as String,
+                style:
+                    AppStyles.calligraphyStyle.copyWith(fontSize: 22.0, height: 1.1),
               ),
             ),
             Expanded(
@@ -136,7 +167,7 @@ class DashboardScreen extends StatelessWidget {
                         padding: const EdgeInsets.only(right: 12.0),
                         alignment: Alignment.centerRight,
                         child: Text(
-                          "$val",
+                          '$val',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
@@ -154,34 +185,53 @@ class DashboardScreen extends StatelessWidget {
       );
     }
 
-    // 3. System Diagnostic Panel items
+    // 3. Diagnostics từ robot status thật
     final diagnosticDetails = [
-      {"k": "Kết nối", "v": robotProvider.isConnected ? "Đã kết nối" : "Ngoại tuyến"},
-      {"k": "Chế độ", "v": "Tự động"},
-      {"k": "Bút", "v": "Sẵn sàng"},
-      {"k": "Giấy", "v": robotProvider.isPaperPresent ? "Đã đặt" : "Trống"},
-      {"k": "Mực", "v": "${(robotProvider.inkLevel * 100).toInt()}%"},
+      {
+        'k': 'Kết nối',
+        'v': robotProvider.isConnected ? 'Đã kết nối' : 'Ngoại tuyến'
+      },
+      {'k': 'Robot IP', 'v': robotProvider.robotIp},
+      {'k': 'Chế độ', 'v': 'Tự động'},
+      {
+        'k': 'TCP Pose X',
+        'v': robotProvider.tcpPose.isNotEmpty
+            ? '${(robotProvider.tcpPose[0] as num).toStringAsFixed(1)} mm'
+            : '—'
+      },
+      {
+        'k': 'TCP Pose Y',
+        'v': robotProvider.tcpPose.length > 1
+            ? '${(robotProvider.tcpPose[1] as num).toStringAsFixed(1)} mm'
+            : '—'
+      },
     ];
 
     Widget buildDiagnosticItem(Map<String, String> row) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.border, width: 1.0)),
+          border:
+              Border(bottom: BorderSide(color: AppColors.border, width: 1.0)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(row["k"]!, style: TextStyle(fontSize: 13.0, color: AppColors.muted)),
+            Text(row['k']!,
+                style: TextStyle(fontSize: 13.0, color: AppColors.muted)),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 3.0), // py → vertical
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0, vertical: 3.0),
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: AppStyles.radiusSm,
               ),
               child: Text(
-                row["v"]!,
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.success),
+                row['v']!,
+                style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.success),
               ),
             ),
           ],
@@ -189,16 +239,19 @@ class DashboardScreen extends StatelessWidget {
       );
     }
 
-    // 4. Log actions stream items
-    final logActions = [
-      {"time": "09:15", "msg": "Robot đã viết chữ Tâm", "status": "success"},
-      {"time": "09:25", "msg": "Robot đã viết chữ Phúc", "status": "success"},
-      {"time": "09:40", "msg": "Robot đang viết chữ Đức", "status": "active"},
-      {"time": "10:00", "msg": "Robot đã viết chữ An", "status": "success"},
-    ];
+    // 4. Log actions từ lịch sử thật (5 gần nhất)
+    final recentLogs = logs.take(5).toList();
 
-    Widget buildLogLine(Map<String, String> log) {
-      final isSuccess = log["status"] == "success";
+    Widget buildLogLine(Map<String, dynamic> log) {
+      final status = log['status']?.toString() ?? '';
+      final isSuccess = status == 'Hoàn thành';
+      final isActive = status == 'Đang viết';
+      final color = isSuccess
+          ? AppColors.success
+          : isActive
+              ? AppColors.warning
+              : AppColors.destructive;
+
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6.0),
         child: Row(
@@ -206,22 +259,28 @@ class DashboardScreen extends StatelessWidget {
             SizedBox(
               width: 50.0,
               child: Text(
-                log["time"]!,
-                style: TextStyle(fontFamily: 'Courier', fontSize: 11.5, color: AppColors.muted),
+                log['time']?.toString() ?? '--:--',
+                style: TextStyle(
+                    fontFamily: 'Courier',
+                    fontSize: 11.5,
+                    color: AppColors.muted),
               ),
             ),
             Container(
               height: 6.0,
               width: 6.0,
               decoration: BoxDecoration(
-                color: isSuccess ? AppColors.success : AppColors.warning,
+                color: color,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 12.0),
-            Text(
-              log["msg"]!,
-              style: const TextStyle(fontSize: 13.0, color: AppColors.ink),
+            Expanded(
+              child: Text(
+                'Robot đã viết chữ ${log['char']} · $status',
+                style:
+                    const TextStyle(fontSize: 13.0, color: AppColors.ink),
+              ),
             ),
           ],
         ),
@@ -232,12 +291,15 @@ class DashboardScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "Dashboard CalliBot",
-          style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+          'Dashboard CalliBot',
+          style: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink),
         ),
         const SizedBox(height: 2.0),
         Text(
-          "Tổng quan hoạt động robot viết thư pháp hôm nay",
+          'Tổng quan hoạt động robot viết thư pháp hôm nay',
           style: TextStyle(fontSize: 13.0, color: AppColors.muted),
         ),
         const SizedBox(height: 24.0),
@@ -269,18 +331,34 @@ class DashboardScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Thống kê lượt chọn theo từng chữ",
-                        style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                        'Thống kê lượt chọn theo từng chữ',
+                        style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink),
                       ),
                       const SizedBox(height: 2.0),
                       Text(
-                        "Số lượt sinh viên chọn mỗi chữ trong hôm nay.",
-                        style: TextStyle(fontSize: 11.5, color: AppColors.muted),
+                        'Số lượt sinh viên chọn mỗi chữ trong phiên này.',
+                        style:
+                            TextStyle(fontSize: 11.5, color: AppColors.muted),
                       ),
                       const SizedBox(height: 16.0),
-                      Column(
-                        children: barChartItems.map(buildBarRow).toList(),
-                      ),
+                      if (barChartItems.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24.0),
+                            child: Text(
+                              'Chưa có dữ liệu thống kê',
+                              style: TextStyle(
+                                  fontSize: 13.0, color: AppColors.muted),
+                            ),
+                          ),
+                        )
+                      else
+                        Column(
+                          children: barChartItems.map(buildBarRow).toList(),
+                        ),
                     ],
                   ),
                 ),
@@ -293,12 +371,17 @@ class DashboardScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Trạng thái robot",
-                        style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                        'Trạng thái robot',
+                        style: TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink),
                       ),
                       const SizedBox(height: 16.0),
                       Column(
-                        children: diagnosticDetails.map(buildDiagnosticItem).toList(),
+                        children: diagnosticDetails
+                            .map(buildDiagnosticItem)
+                            .toList(),
                       ),
                     ],
                   ),
@@ -312,13 +395,26 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Thống kê lượt chọn theo từng chữ",
-                  style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                  'Thống kê lượt chọn theo từng chữ',
+                  style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink),
                 ),
                 const SizedBox(height: 16.0),
-                Column(
-                  children: barChartItems.map(buildBarRow).toList(),
-                ),
+                if (barChartItems.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text('Chưa có dữ liệu thống kê',
+                          style: TextStyle(
+                              fontSize: 13.0, color: AppColors.muted)),
+                    ),
+                  )
+                else
+                  Column(
+                    children: barChartItems.map(buildBarRow).toList(),
+                  ),
               ],
             ),
           ),
@@ -328,12 +424,16 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Trạng thái robot",
-                  style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                  'Trạng thái robot',
+                  style: TextStyle(
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink),
                 ),
                 const SizedBox(height: 16.0),
                 Column(
-                  children: diagnosticDetails.map(buildDiagnosticItem).toList(),
+                  children:
+                      diagnosticDetails.map(buildDiagnosticItem).toList(),
                 ),
               ],
             ),
@@ -347,13 +447,28 @@ class DashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Hoạt động gần đây",
-                style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                'Hoạt động gần đây',
+                style: TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink),
               ),
               const SizedBox(height: 14.0),
-              Column(
-                children: logActions.map(buildLogLine).toList(),
-              ),
+              if (recentLogs.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Center(
+                    child: Text(
+                      'Chưa có hoạt động nào trong phiên này',
+                      style:
+                          TextStyle(fontSize: 13.0, color: AppColors.muted),
+                    ),
+                  ),
+                )
+              else
+                Column(
+                  children: recentLogs.map(buildLogLine).toList(),
+                ),
             ],
           ),
         ),

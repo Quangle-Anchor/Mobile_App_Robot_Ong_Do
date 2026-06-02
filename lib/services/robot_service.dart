@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:math';
-import '../models/robot_command.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RobotService {
   // Singleton pattern
@@ -8,124 +8,209 @@ class RobotService {
   factory RobotService() => _instance;
   RobotService._internal();
 
-  bool _isConnected = false;
-  double _inkLevel = 0.85; // 85% starting ink level
-  bool _isPaperPresent = true;
-  final String _robotId = "CALLIBOT-01";
-  
-  // Broadcast streams for external status listening
-  final StreamController<bool> _connectionController = StreamController<bool>.broadcast();
-  final StreamController<double> _inkLevelController = StreamController<double>.broadcast();
-  final StreamController<double> _drawingProgressController = StreamController<double>.broadcast();
-  final StreamController<String> _robotStatusMessageController = StreamController<String>.broadcast();
-  
+  // Base URL có thể thay đổi qua setBaseUrl()
+  String _baseUrl = 'http://localhost:8000';
+
+  String get baseUrl => _baseUrl;
+
+  void setBaseUrl(String url) {
+    _baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+  }
+
+  // Broadcast streams để UI lắng nghe
+  final StreamController<bool> _connectionController =
+      StreamController<bool>.broadcast();
+  final StreamController<String> _robotStatusMessageController =
+      StreamController<String>.broadcast();
+
   Stream<bool> get connectionStream => _connectionController.stream;
-  Stream<double> get inkLevelStream => _inkLevelController.stream;
-  Stream<double> get drawingProgressStream => _drawingProgressController.stream;
-  Stream<String> get statusMessageStream => _robotStatusMessageController.stream;
+  Stream<String> get statusMessageStream =>
+      _robotStatusMessageController.stream;
 
-  bool get isConnected => _isConnected;
-  double get inkLevel => _inkLevel;
-  bool get isPaperPresent => _isPaperPresent;
-  String get robotId => _robotId;
+  // ────────────────────────────────────────────────
+  // Internal HTTP helpers
+  // ────────────────────────────────────────────────
 
-  // Track active simulated printing timer
-  Timer? _simulationTimer;
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
 
-  Future<bool> connect(String ipAddress) async {
-    _robotStatusMessageController.add("Connecting to $ipAddress...");
-    await Future.delayed(const Duration(seconds: 1)); // Simulate handshake
-    _isConnected = true;
+  Future<Map<String, dynamic>> _get(String path) async {
+    final uri = Uri.parse('$_baseUrl$path');
+    final response = await http.get(uri, headers: _headers).timeout(
+          const Duration(seconds: 8),
+        );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    }
+    throw Exception('GET $path failed: ${response.statusCode} ${response.body}');
+  }
+
+  Future<Map<String, dynamic>> _post(String path,
+      [Map<String, dynamic>? body]) async {
+    final uri = Uri.parse('$_baseUrl$path');
+    final response = await http
+        .post(
+          uri,
+          headers: _headers,
+          body: body != null ? json.encode(body) : null,
+        )
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    }
+    throw Exception('POST $path failed: ${response.statusCode} ${response.body}');
+  }
+
+  Future<Map<String, dynamic>> _patch(
+      String path, Map<String, dynamic> body) async {
+    final uri = Uri.parse('$_baseUrl$path');
+    final response = await http
+        .patch(
+          uri,
+          headers: _headers,
+          body: json.encode(body),
+        )
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    }
+    throw Exception(
+        'PATCH $path failed: ${response.statusCode} ${response.body}');
+  }
+
+  // ────────────────────────────────────────────────
+  // Health
+  // ────────────────────────────────────────────────
+
+  /// GET /health → { "status": "ok" }
+  Future<bool> checkHealth() async {
+    try {
+      final data = await _get('/health');
+      return data['status'] == 'ok';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ────────────────────────────────────────────────
+  // Robot Status
+  // ────────────────────────────────────────────────
+
+  /// GET /robot/status → { connected, xmlrpc_ok, tcp_pose, error_code }
+  Future<Map<String, dynamic>> fetchRobotStatus() async {
+    return _get('/robot/status');
+  }
+
+  /// GET /robot/ports
+  Future<Map<String, dynamic>> fetchRobotPorts() async {
+    return _get('/robot/ports');
+  }
+
+  // ────────────────────────────────────────────────
+  // Config
+  // ────────────────────────────────────────────────
+
+  /// GET /config → toàn bộ config object
+  Future<Map<String, dynamic>> fetchConfig() async {
+    return _get('/config');
+  }
+
+  /// PATCH /config với body { data: {...} }
+  Future<Map<String, dynamic>> patchConfig(
+      Map<String, dynamic> updates) async {
+    return _patch('/config', {'data': updates});
+  }
+
+  /// POST /config/reload
+  Future<Map<String, dynamic>> reloadConfig() async {
+    return _post('/config/reload');
+  }
+
+  // ────────────────────────────────────────────────
+  // Motion
+  // ────────────────────────────────────────────────
+
+  /// POST /robot/move/start → di chuyển robot về vị trí bắt đầu
+  Future<Map<String, dynamic>> moveToStart({double vel = 20}) async {
+    _robotStatusMessageController.add('Di chuyển về vị trí bắt đầu...');
+    final result = await _post('/robot/move/start', {'vel': vel});
+    _robotStatusMessageController.add('Robot đã về vị trí bắt đầu');
+    return result;
+  }
+
+  /// POST /robot/draw/text → viết chữ thư pháp
+  /// Trả về { stroke_count, pose_count, planned_pose_count, result, ... }
+  Future<Map<String, dynamic>> drawText(
+    String text, {
+    double vel = 12,
+    bool continuous = false,
+  }) async {
+    _robotStatusMessageController.add('Bắt đầu viết chữ "$text"...');
+    final result = await _post('/robot/draw/text', {
+      'text': text,
+      'continuous': continuous,
+      'vel': vel,
+    });
+    _robotStatusMessageController.add('Đã viết xong chữ "$text"');
     _connectionController.add(true);
-    _robotStatusMessageController.add("Robot Connected!");
-    return true;
+    return result;
   }
 
-  Future<void> disconnect() async {
-    _isConnected = false;
-    _connectionController.add(false);
-    _robotStatusMessageController.add("Disconnected from robot");
+  /// POST /robot/draw/svg với word_key hoặc svg_path
+  Future<Map<String, dynamic>> drawSvgByWordKey(
+    String wordKey, {
+    double vel = 12,
+  }) async {
+    _robotStatusMessageController.add('Bắt đầu viết "$wordKey" (SVG)...');
+    final result =
+        await _post('/robot/draw/svg', {'word_key': wordKey, 'vel': vel});
+    _robotStatusMessageController.add('Đã viết xong "$wordKey"');
+    return result;
   }
 
-  // Raw coordinate transmitter / executor simulation
-  Future<void> executeCommand(RobotCommand command, {Function(double)? onProgress}) async {
-    if (!_isConnected) {
-      _robotStatusMessageController.add("Error: Device is not connected");
-      throw Exception("Robot not connected");
-    }
+  // ────────────────────────────────────────────────
+  // Gripper
+  // ────────────────────────────────────────────────
 
-    _simulationTimer?.cancel();
-    
-    switch (command.action) {
-      case RobotAction.connect:
-        _robotStatusMessageController.add("Initiating Handshake...");
-        break;
-      case RobotAction.securePaper:
-        _robotStatusMessageController.add("Securing Calligraphy paper...");
-        await Future.delayed(const Duration(milliseconds: 800));
-        _isPaperPresent = true;
-        _robotStatusMessageController.add("Paper Secured successfully");
-        break;
-      case RobotAction.dipInk:
-        _robotStatusMessageController.add("Dipping brush pen into inkwell...");
-        await Future.delayed(const Duration(milliseconds: 1200));
-        _inkLevel = max(0.0, _inkLevel - 0.05); // Consumes 5% ink
-        _inkLevelController.add(_inkLevel);
-        _robotStatusMessageController.add("Brush dipped successfully. Ink: ${(_inkLevel * 100).toInt()}%");
-        break;
-      case RobotAction.drawStroke:
-        _robotStatusMessageController.add("Starting drawing execution coordinates...");
-        double currentProgress = 0.0;
-        
-        // Simulating coordinate transmission speed and real progress
-        final completer = Completer<void>();
-        _simulationTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
-          currentProgress += 0.05; // 5% increase every 200ms (~4 seconds total)
-          if (currentProgress >= 1.0) {
-            currentProgress = 1.0;
-            timer.cancel();
-            completer.complete();
-          }
-          _drawingProgressController.add(currentProgress);
-          if (onProgress != null) onProgress(currentProgress);
-        });
-        
-        await completer.future;
-        _robotStatusMessageController.add("Stroke drawing completed!");
-        break;
-      case RobotAction.releasePaper:
-        _robotStatusMessageController.add("Releasing paper clamps...");
-        await Future.delayed(const Duration(milliseconds: 500));
-        _isPaperPresent = false;
-        _robotStatusMessageController.add("Paper released");
-        break;
-      case RobotAction.home:
-        _robotStatusMessageController.add("Homing motor coordinates...");
-        await Future.delayed(const Duration(milliseconds: 1000));
-        _robotStatusMessageController.add("Motors homed");
-        break;
-      case RobotAction.pause:
-        _simulationTimer?.cancel();
-        _robotStatusMessageController.add("Execution paused by user");
-        break;
-      case RobotAction.emergencyStop:
-        _simulationTimer?.cancel();
-        _robotStatusMessageController.add("EMERGENCY STOP TRIGGERED!");
-        break;
-    }
+  /// GET /gripper/status → { connected, config, snapshot }
+  Future<Map<String, dynamic>> fetchGripperStatus() async {
+    return _get('/gripper/status');
   }
 
-  void resetInk() {
-    _inkLevel = 0.95;
-    _inkLevelController.add(_inkLevel);
-    _robotStatusMessageController.add("Ink refilled");
+  /// POST /gripper/open
+  Future<Map<String, dynamic>> openGripper({
+    int pos = 100,
+    int vel = 20,
+    int force = 20,
+  }) async {
+    _robotStatusMessageController.add('Mở gripper (thả giấy)...');
+    final result =
+        await _post('/gripper/open', {'pos': pos, 'vel': vel, 'force': force});
+    _robotStatusMessageController.add('Gripper đã mở');
+    return result;
   }
+
+  /// POST /gripper/close
+  Future<Map<String, dynamic>> closeGripper({
+    int pos = 20,
+    int vel = 20,
+    int force = 20,
+  }) async {
+    _robotStatusMessageController.add('Đóng gripper (kẹp giấy)...');
+    final result = await _post(
+        '/gripper/close', {'pos': pos, 'vel': vel, 'force': force});
+    _robotStatusMessageController.add('Giấy đã được kẹp chặt');
+    return result;
+  }
+
+  // ────────────────────────────────────────────────
+  // Lifecycle
+  // ────────────────────────────────────────────────
 
   void dispose() {
     _connectionController.close();
-    _inkLevelController.close();
-    _drawingProgressController.close();
     _robotStatusMessageController.close();
-    _simulationTimer?.cancel();
   }
 }

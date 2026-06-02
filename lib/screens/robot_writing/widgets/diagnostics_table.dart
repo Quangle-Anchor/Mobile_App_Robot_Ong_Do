@@ -25,23 +25,31 @@ class DiagnosticsTable extends StatelessWidget {
         "isBadge": true
       },
       {
-        "label": "Bút thư pháp",
-        "value": "Sẵn sàng",
-        "isBadge": true
+        "label": "Robot IP",
+        "value": provider.robotIp,
+        "isBadge": false
       },
       {
-        "label": "Giấy",
-        "value": provider.isPaperPresent ? "Đã đặt" : "Trống",
-        "isBadge": true
+        "label": "TCP X/Y/Z",
+        "value": provider.tcpPose.length >= 3
+            ? "${(provider.tcpPose[0] as num).toStringAsFixed(0)}/"
+              "${(provider.tcpPose[1] as num).toStringAsFixed(0)}/"
+              "${(provider.tcpPose[2] as num).toStringAsFixed(0)} mm"
+            : "—",
+        "isBadge": false
       },
       {
-        "label": "Mực",
-        "value": provider.inkLevel > 0.15 ? "Đủ" : "Yêu cầu bơm mực",
+        "label": "Bước hiện tại",
+        "value": provider.activeStepIndex >= 0 &&
+                provider.activeStepIndex < provider.stepLabels.length
+            ? provider.stepLabels[provider.activeStepIndex]
+            : "Chờ lệnh",
         "isBadge": true
       },
     ];
 
     Widget buildRow(Map<String, dynamic> item) {
+      final isBadge = item["isBadge"] as bool;
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         decoration: const BoxDecoration(
@@ -57,7 +65,17 @@ class DiagnosticsTable extends StatelessWidget {
                 color: AppColors.muted,
               ),
             ),
-            StatusBadge(status: item["value"] as String),
+            isBadge
+                ? StatusBadge(status: item["value"] as String)
+                : Text(
+                    item["value"] as String,
+                    style: const TextStyle(
+                      fontFamily: 'Courier',
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink,
+                    ),
+                  ),
           ],
         ),
       );

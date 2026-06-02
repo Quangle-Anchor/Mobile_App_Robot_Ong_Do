@@ -204,50 +204,66 @@ class _RobotWritingScreenState extends State<RobotWritingScreen> {
           ),
           const SizedBox(height: 24.0),
 
-          // Writing emergency controllers
+          // Status message từ API
+          if (robotProvider.statusMessage.isNotEmpty) ...[  
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.5),
+                borderRadius: AppStyles.radiusSm,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14.0, color: AppColors.muted),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: Text(
+                      robotProvider.statusMessage,
+                      style: TextStyle(fontSize: 12.0, color: AppColors.muted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16.0),
+          ],
+
+          // Writing controllers
           Row(
             children: [
               OutlinedButton.icon(
-                onPressed: robotProvider.activeStepIndex != -1 ? () => robotProvider.pauseWrite() : null,
+                onPressed: robotProvider.activeStepIndex != -1
+                    ? () => robotProvider.pauseWrite()
+                    : null,
                 icon: const Icon(Icons.pause, size: 16.0),
-                label: const Text("Tạm dừng"),
+                label: const Text('Tạm dừng'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.ink,
                   side: const BorderSide(color: AppColors.border),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                  shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 14.0),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: AppStyles.radiusMd),
                 ),
               ),
               const SizedBox(width: 12.0),
               OutlinedButton.icon(
                 onPressed: () {
                   robotProvider.stopEmergency();
-                  historyProvider.addLog(selected.char, selected.meaning, "Đã hủy");
+                  historyProvider.addLog(
+                      selected.char, selected.meaning, 'Đã hủy');
                   widget.onNavigate(0);
                 },
                 icon: const Icon(Icons.stop_circle_outlined, size: 16.0),
-                label: const Text("Dừng khẩn cấp"),
+                label: const Text('Dừng khẩn cấp'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.destructive,
                   side: const BorderSide(color: AppColors.destructive),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                  shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
-                ),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Instant bypass trigger for testing
-                  historyProvider.addLog(selected.char, selected.meaning, "Hoàn thành");
-                  widget.onNavigate(3);
-                },
-                icon: const Icon(Icons.check, size: 16.0),
-                label: const Text("Hoàn tất mô phỏng"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                  shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 14.0),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: AppStyles.radiusMd),
                 ),
               ),
             ],
