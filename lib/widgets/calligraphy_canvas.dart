@@ -55,11 +55,19 @@ class CalligraphyCanvas extends StatelessWidget {
           
           // Big Calligraphy Character
           Center(
-            child: Text(
-              char,
-              style: AppStyles.calligraphyStyle.copyWith(
-                fontSize: fontSize,
-                color: AppColors.ink,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  char,
+                  textAlign: TextAlign.center,
+                  style: AppStyles.calligraphyStyle.copyWith(
+                    fontSize: fontSize,
+                    color: AppColors.ink,
+                    height: 1.0,
+                  ),
+                ),
               ),
             ),
           ),

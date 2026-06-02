@@ -52,20 +52,45 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0), // py → vertical
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: AppStyles.radiusSm,
-              ),
-              child: Text(
-                "Đã chọn: ${selected.char}",
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: AppStyles.radiusSm,
+                  ),
+                  child: Text(
+                    "Đã chọn: ${selected.char}",
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12.0),
+                ElevatedButton(
+                  onPressed: () => onNavigate(1),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
+                    elevation: 2.0,
+                  ),
+                  child: const Row(
+                    children: [
+                      Text(
+                        "Xác nhận",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
+                      ),
+                      SizedBox(width: 6.0),
+                      Icon(Icons.arrow_forward, size: 14.0),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -160,9 +185,19 @@ class HomeScreen extends StatelessWidget {
                                 border: Border.all(color: AppColors.border, width: 1.0),
                               ),
                               alignment: Alignment.center,
-                              child: Text(
-                                item.char,
-                                style: AppStyles.calligraphyStyle.copyWith(fontSize: 54.0),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    item.char,
+                                    textAlign: TextAlign.center,
+                                    style: AppStyles.calligraphyStyle.copyWith(
+                                      fontSize: 54.0,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -212,34 +247,6 @@ class HomeScreen extends StatelessWidget {
           ),
         const SizedBox(height: 24.0),
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton(
-              onPressed: () => onNavigate(1),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
-                elevation: 2.0,
-              ),
-              child: const Row(
-                children: [
-                  Text(
-                    "Tiếp tục xác nhận",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
-                  ),
-                  SizedBox(width: 8.0),
-                  Icon(Icons.arrow_forward, size: 16.0),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 36.0),
-
-        const ProcessSteps(),
       ],
     );
   }

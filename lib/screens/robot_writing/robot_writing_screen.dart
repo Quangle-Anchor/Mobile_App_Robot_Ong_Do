@@ -118,7 +118,7 @@ class _RobotWritingScreenState extends State<RobotWritingScreen> {
 
           // Writing simulation canvas
           Container(
-            height: 320.0,
+            height: 240.0,
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: AppStyles.radiusLg,
@@ -151,19 +151,27 @@ class _RobotWritingScreenState extends State<RobotWritingScreen> {
                 ),
 
                 Center(
-                  child: Text(
-                    selected.char,
-                    style: AppStyles.calligraphyStyle.copyWith(
-                      fontSize: 160.0,
-                      // Darkens as progress increases — withValues replaces withOpacity
-                      color: AppColors.ink.withValues(alpha: 0.1 + (robotProvider.drawingProgress * 0.9)),
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        selected.char,
+                        textAlign: TextAlign.center,
+                        style: AppStyles.calligraphyStyle.copyWith(
+                          fontSize: 160.0,
+                          height: 1.0,
+                          // Darkens as progress increases — withValues replaces withOpacity
+                          color: AppColors.ink.withValues(alpha: 0.1 + (robotProvider.drawingProgress * 0.9)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20.0),
+          const SizedBox(height: 12.0),
 
           // Linear progress indicator
           Row(

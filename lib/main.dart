@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'constants/app_colors.dart';
@@ -24,6 +25,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String baseFontFamily = (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
+        ? 'Segoe UI'
+        : 'Georgia';
+
     return MaterialApp(
       title: 'CalliBot',
       debugShowCheckedModeBanner: false,
@@ -56,7 +61,7 @@ class MyApp extends StatelessWidget {
         ),
 
         // Elegant serif default font config for standard displays
-        fontFamily: 'Georgia',
+        fontFamily: baseFontFamily,
       ),
 
       // Load responsive primary layout controller shell

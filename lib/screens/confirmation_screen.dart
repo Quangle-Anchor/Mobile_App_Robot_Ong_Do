@@ -22,7 +22,7 @@ class ConfirmationScreen extends StatelessWidget {
 
     // Calligraphy Canvas preview panel
     final previewPanel = CustomCard(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(16.0),
       border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 1.5),
       child: Column(
         children: [
@@ -59,7 +59,7 @@ class ConfirmationScreen extends StatelessWidget {
           CalligraphyCanvas(
             char: selected.char,
             fontSize: 160.0,
-            height: 280.0,
+            height: 200.0,
             showDecorativeBorder: false,
           ),
           const SizedBox(height: 16.0),
@@ -97,7 +97,7 @@ class ConfirmationScreen extends StatelessWidget {
             color: AppColors.primary,
           ),
         ),
-        const SizedBox(height: 20.0),
+        const SizedBox(height: 12.0),
 
         // Meaning panel
         Container(
@@ -132,7 +132,7 @@ class ConfirmationScreen extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16.0),
+        const SizedBox(height: 12.0),
 
         // Warning alert box
         Container(
@@ -165,7 +165,7 @@ class ConfirmationScreen extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16.0),
+        const SizedBox(height: 12.0),
 
         // Robot live connection status box
         Container(
@@ -224,7 +224,7 @@ class ConfirmationScreen extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24.0),
+        const SizedBox(height: 16.0),
 
         // Navigation triggers
         Row(
@@ -269,7 +269,7 @@ class ConfirmationScreen extends StatelessWidget {
     );
 
     return CustomCard(
-      padding: const EdgeInsets.all(28.0),
+      padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -282,13 +282,13 @@ class ConfirmationScreen extends StatelessWidget {
             "Kiểm tra lại lựa chọn của bạn trước khi robot bắt đầu viết.",
             style: TextStyle(fontSize: 13.0, color: AppColors.muted),
           ),
-          const SizedBox(height: 24.0),
+          const SizedBox(height: 16.0),
           if (isDesktop)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(flex: 4, child: previewPanel),
-                const SizedBox(width: 28.0),
+                const SizedBox(width: 24.0),
                 Expanded(flex: 5, child: detailsPanel),
               ],
             )
@@ -296,7 +296,7 @@ class ConfirmationScreen extends StatelessWidget {
             Column(
               children: [
                 previewPanel,
-                const SizedBox(height: 24.0),
+                const SizedBox(height: 16.0),
                 detailsPanel,
               ],
             ),
