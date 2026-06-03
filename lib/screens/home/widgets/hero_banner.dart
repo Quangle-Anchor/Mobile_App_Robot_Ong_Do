@@ -130,10 +130,10 @@ class HeroBanner extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: const Text(
-                    "書",
+                    "Thư",
                     style: TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 90.0,
+                      fontFamily: 'ThuPhapViet',
+                      fontSize: 80.0,
                       fontWeight: FontWeight.bold,
                       color: AppColors.ink,
                     ),

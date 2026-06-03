@@ -47,6 +47,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  msix: ^3.16.13
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -92,3 +93,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+msix_config:
+  display_name: Robot Ong Do
+  publisher_display_name: Nguyen Dinh Duy
+  title: Robot Ong Do
+  identity_name: com.approbot.robotongdo
+  publisher: CN=RobotOngDoDev
+  # Bạn có thể thêm đường dẫn ảnh logo ứng dụng (kích thước tối thiểu 150x150)
+  # logo_path: assets/icon/icon.png

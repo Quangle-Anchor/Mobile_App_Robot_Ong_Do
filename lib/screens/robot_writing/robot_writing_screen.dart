@@ -194,23 +194,7 @@ class _RobotWritingScreenState extends State<RobotWritingScreen> {
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
           ),
-          const SizedBox(height: 12.0),
-
-          Row(
-            children: [
-              Icon(Icons.access_time, size: 16.0, color: AppColors.muted),
-              const SizedBox(width: 6.0),
-              Text(
-                "Thời gian còn lại: ",
-                style: TextStyle(fontSize: 12.5, color: AppColors.muted),
-              ),
-              Text(
-                "${((1.0 - robotProvider.drawingProgress) * 45).toInt()} giây",
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.ink),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24.0),
+          const SizedBox(height: 16.0),
 
           // Status message từ API
           if (robotProvider.statusMessage.isNotEmpty) ...[  
