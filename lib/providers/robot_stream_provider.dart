@@ -249,7 +249,7 @@ class RobotStreamProvider extends ChangeNotifier {
               trimmed,
               continuous: continuous,
             )
-          : await _robotService.previewText(trimmed, continuous: continuous);
+          : await _robotService.previewTextSkeleton(trimmed, continuous: continuous);
       _lastActionResult = result;
       final strokeCount = result['stroke_count'] ?? '-';
       final poseCount = (result['poses'] as List?)?.length ?? '-';
@@ -306,7 +306,7 @@ class RobotStreamProvider extends ChangeNotifier {
               vel: vel,
               continuous: continuous,
             )
-          : _robotService.drawText(trimmed, vel: vel, continuous: continuous),
+          : _robotService.drawTextSkeleton(trimmed, vel: vel, continuous: continuous),
     );
   }
 
