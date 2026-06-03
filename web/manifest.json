@@ -1,11 +1,11 @@
 {
-    "name": "approbot",
-    "short_name": "approbot",
+    "name": "Robot Ông Đồ",
+    "short_name": "Robot Ông Đồ",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Ứng dụng điều khiển robot viết thư pháp.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

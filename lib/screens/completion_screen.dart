@@ -44,7 +44,7 @@ class CompletionScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
               color: AppColors.ink,
             ),
-          )
+          ),
         ],
       );
     }
@@ -55,7 +55,10 @@ class CompletionScreen extends StatelessWidget {
         children: [
           // Main layout content
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 36.0,
+            ),
             child: Column(
               children: [
                 // Huge Checked Success Circle Badge
@@ -67,12 +70,20 @@ class CompletionScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.check, color: Colors.white, size: 38.0),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 38.0,
+                  ),
                 ),
                 const SizedBox(height: 20.0),
                 const Text(
                   "Robot đã hoàn thành",
-                  style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: AppColors.ink),
+                  style: TextStyle(
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 4.0),
                 Text(
@@ -86,7 +97,10 @@ class CompletionScreen extends StatelessWidget {
                   width: 320.0,
                   child: CustomCard(
                     padding: const EdgeInsets.all(20.0),
-                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.4), width: 1.5),
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
                     child: Column(
                       children: [
                         CalligraphyCanvas(
@@ -99,17 +113,23 @@ class CompletionScreen extends StatelessWidget {
                         RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            style: TextStyle(fontSize: 11.5, color: AppColors.muted),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: AppColors.muted,
+                            ),
                             children: [
                               TextSpan(
                                 text: selected.char,
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
                               ),
                               const TextSpan(text: " — "),
                               TextSpan(text: selected.meaning),
                             ],
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -120,12 +140,19 @@ class CompletionScreen extends StatelessWidget {
                 RichText(
                   textAlign: TextAlign.center,
                   text: const TextSpan(
-                    style: TextStyle(fontSize: 13.0, color: AppColors.secondaryText, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 13.0,
+                      color: AppColors.secondaryText,
+                      height: 1.3,
+                    ),
                     children: [
                       TextSpan(text: "Cảm ơn bạn đã tham gia trải nghiệm "),
                       TextSpan(
-                        text: "CalliBot",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                        text: "Robot Ông Đồ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                       ),
                       TextSpan(text: " tại ngày hội tuyển sinh."),
                     ],
@@ -140,24 +167,40 @@ class CompletionScreen extends StatelessWidget {
                     ElevatedButton.icon(
                       onPressed: () => onNavigate(0),
                       icon: const Icon(Icons.refresh_rounded, size: 16.0),
-                      label: const Text("Chọn chữ khác", style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text(
+                        "Chọn chữ khác",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                        shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 16.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppStyles.radiusMd,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14.0),
                     OutlinedButton.icon(
                       onPressed: () => onNavigate(0),
                       icon: const Icon(Icons.home_outlined, size: 16.0),
-                      label: const Text("Về trang chủ", style: TextStyle(fontWeight: FontWeight.bold)),
+                      label: const Text(
+                        "Về trang chủ",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.secondaryText,
                         side: const BorderSide(color: AppColors.border),
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                        shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 16.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppStyles.radiusMd,
+                        ),
                       ),
                     ),
                   ],
@@ -175,7 +218,10 @@ class CompletionScreen extends StatelessWidget {
                 bottomRight: Radius.circular(14.0),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: metadataItems.map(buildMetaColumn).toList(),

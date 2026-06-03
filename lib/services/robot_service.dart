@@ -14,7 +14,13 @@ class RobotService {
   String get baseUrl => _baseUrl;
 
   void setBaseUrl(String url) {
-    _baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    final trimmed = url.trim();
+    final withScheme = trimmed.startsWith(RegExp(r'https?://'))
+        ? trimmed
+        : 'http://$trimmed';
+    _baseUrl = withScheme.endsWith('/')
+        ? withScheme.substring(0, withScheme.length - 1)
+        : withScheme;
   }
 
   // Broadcast streams để UI lắng nghe
@@ -32,23 +38,29 @@ class RobotService {
   // ────────────────────────────────────────────────
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
 
   Future<Map<String, dynamic>> _get(String path) async {
     final uri = Uri.parse('$_baseUrl$path');
-    final response = await http.get(uri, headers: _headers).timeout(
-          const Duration(seconds: 8),
-        );
+    final response = await http
+        .get(uri, headers: _headers)
+        .timeout(const Duration(seconds: 8));
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     }
-    throw Exception('GET $path failed: ${response.statusCode} ${response.body}');
+    throw Exception(
+      'GET $path failed: ${response.statusCode} ${response.body}',
+    );
   }
 
-  Future<Map<String, dynamic>> _post(String path,
-      [Map<String, dynamic>? body]) async {
+  Future<Map<String, dynamic>> _post(
+    String path, [
+    Map<String, dynamic>? body,
+    Duration timeout = const Duration(seconds: 30),
+  ]) async {
     final uri = Uri.parse('$_baseUrl$path');
     final response = await http
         .post(
@@ -56,28 +68,31 @@ class RobotService {
           headers: _headers,
           body: body != null ? json.encode(body) : null,
         )
-        .timeout(const Duration(seconds: 30));
+        .timeout(timeout);
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     }
-    throw Exception('POST $path failed: ${response.statusCode} ${response.body}');
+    throw Exception(
+      'POST $path failed: ${response.statusCode} ${response.body}',
+    );
   }
 
   Future<Map<String, dynamic>> _patch(
-      String path, Map<String, dynamic> body) async {
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     final uri = Uri.parse('$_baseUrl$path');
     final response = await http
-        .patch(
-          uri,
-          headers: _headers,
-          body: json.encode(body),
-        )
+        .patch(uri, headers: _headers, body: json.encode(body))
         .timeout(const Duration(seconds: 10));
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     }
     throw Exception(
-        'PATCH $path failed: ${response.statusCode} ${response.body}');
+      'PATCH $path failed: ${response.statusCode} ${response.body}',
+    );
   }
 
   // ────────────────────────────────────────────────
@@ -103,6 +118,10 @@ class RobotService {
     return _get('/robot/status');
   }
 
+  Future<Map<String, dynamic>> fetchRawRobotStatus() async {
+    return _get('/robot/raw_status');
+  }
+
   /// GET /robot/ports
   Future<Map<String, dynamic>> fetchRobotPorts() async {
     return _get('/robot/ports');
@@ -118,8 +137,7 @@ class RobotService {
   }
 
   /// PATCH /config với body { data: {...} }
-  Future<Map<String, dynamic>> patchConfig(
-      Map<String, dynamic> updates) async {
+  Future<Map<String, dynamic>> patchConfig(Map<String, dynamic> updates) async {
     return _patch('/config', {'data': updates});
   }
 
@@ -135,7 +153,9 @@ class RobotService {
   /// POST /robot/move/start → di chuyển robot về vị trí bắt đầu
   Future<Map<String, dynamic>> moveToStart({double vel = 20}) async {
     _robotStatusMessageController.add('Di chuyển về vị trí bắt đầu...');
-    final result = await _post('/robot/move/start', {'vel': vel});
+    final result = await _post('/robot/move/start', {
+      'vel': vel,
+    }, const Duration(minutes: 3));
     _robotStatusMessageController.add('Robot đã về vị trí bắt đầu');
     return result;
   }
@@ -152,10 +172,55 @@ class RobotService {
       'text': text,
       'continuous': continuous,
       'vel': vel,
-    });
+    }, const Duration(minutes: 10));
     _robotStatusMessageController.add('Đã viết xong chữ "$text"');
     _connectionController.add(true);
     return result;
+  }
+
+  Future<Map<String, dynamic>> drawShape(
+    String shapeName, {
+    double vel = 20,
+  }) async {
+    _robotStatusMessageController.add('Bắt đầu vẽ "$shapeName"...');
+    final result = await _post('/robot/draw/shape', {
+      'shape_name': shapeName,
+      'vel': vel,
+    }, const Duration(minutes: 10));
+    _robotStatusMessageController.add('Đã vẽ xong "$shapeName"');
+    return result;
+  }
+
+  Future<Map<String, dynamic>> drawLine({double vel = 20}) async {
+    _robotStatusMessageController.add('Bắt đầu vẽ đường thẳng...');
+    final result = await _post('/robot/draw/line', {
+      'vel': vel,
+    }, const Duration(minutes: 10));
+    _robotStatusMessageController.add('Đã vẽ xong đường thẳng');
+    return result;
+  }
+
+  Future<Map<String, dynamic>> drawCircle({double vel = 20}) async {
+    _robotStatusMessageController.add('Bắt đầu vẽ hình tròn...');
+    final result = await _post('/robot/draw/circle', {
+      'vel': vel,
+    }, const Duration(minutes: 10));
+    _robotStatusMessageController.add('Đã vẽ xong hình tròn');
+    return result;
+  }
+
+  Future<Map<String, dynamic>> previewText(
+    String text, {
+    bool continuous = false,
+  }) async {
+    return _post('/trajectory/text/preview', {
+      'text': text,
+      'continuous': continuous,
+    });
+  }
+
+  Future<Map<String, dynamic>> previewShape(String shapeName) async {
+    return _post('/trajectory/shape/preview', {'shape_name': shapeName});
   }
 
   /// POST /robot/draw/svg với word_key hoặc svg_path
@@ -164,44 +229,11 @@ class RobotService {
     double vel = 12,
   }) async {
     _robotStatusMessageController.add('Bắt đầu viết "$wordKey" (SVG)...');
-    final result =
-        await _post('/robot/draw/svg', {'word_key': wordKey, 'vel': vel});
+    final result = await _post('/robot/draw/svg', {
+      'word_key': wordKey,
+      'vel': vel,
+    }, const Duration(minutes: 10));
     _robotStatusMessageController.add('Đã viết xong "$wordKey"');
-    return result;
-  }
-
-  // ────────────────────────────────────────────────
-  // Gripper
-  // ────────────────────────────────────────────────
-
-  /// GET /gripper/status → { connected, config, snapshot }
-  Future<Map<String, dynamic>> fetchGripperStatus() async {
-    return _get('/gripper/status');
-  }
-
-  /// POST /gripper/open
-  Future<Map<String, dynamic>> openGripper({
-    int pos = 100,
-    int vel = 20,
-    int force = 20,
-  }) async {
-    _robotStatusMessageController.add('Mở gripper (thả giấy)...');
-    final result =
-        await _post('/gripper/open', {'pos': pos, 'vel': vel, 'force': force});
-    _robotStatusMessageController.add('Gripper đã mở');
-    return result;
-  }
-
-  /// POST /gripper/close
-  Future<Map<String, dynamic>> closeGripper({
-    int pos = 20,
-    int vel = 20,
-    int force = 20,
-  }) async {
-    _robotStatusMessageController.add('Đóng gripper (kẹp giấy)...');
-    final result = await _post(
-        '/gripper/close', {'pos': pos, 'vel': vel, 'force': force});
-    _robotStatusMessageController.add('Giấy đã được kẹp chặt');
     return result;
   }
 

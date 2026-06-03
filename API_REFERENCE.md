@@ -15,7 +15,7 @@ Tài liệu này tổng hợp các API FastAPI hiện có trong project để fr
 - Pose 6D luôn có dạng `[x, y, z, rx, ry, rz]`.
 - `corners` luôn là mảng 4 phần tử, mỗi phần tử là một pose 6D.
 - Các endpoint motion có thể trả thêm `result`, `enable_move`, `allow_raw_xmlrpc_motion`, `pose_count`, `stroke_count`, `planned_pose_count`, `motion_mode` tùy luồng xử lý.
-- Một số endpoint motion bị khóa bởi config như `enable_robot_move`, `allow_raw_xmlrpc_motion`, `enable_gripper_motion`, `allow_raw_xmlrpc_gripper`.
+- Một số endpoint motion bị khóa bởi config như `enable_robot_move`, `allow_raw_xmlrpc_motion`.
 
 ## Health
 
@@ -232,60 +232,6 @@ Response là toàn bộ object config, gồm các nhóm chính:
     "max_workspace_x": 500.0,
     "min_workspace_y": -600.0,
     "max_workspace_y": 600.0
-  },
-  "tool_do_gripper": {
-    "enabled": false,
-    "enable_tool_do_gripper": false,
-    "do_id": 1,
-    "open_status": 0,
-    "close_status": 1,
-    "smooth": 0,
-    "block": 1,
-    "cycle_count": 5,
-    "hold_seconds": 1.0
-  },
-  "gripper": {
-    "enabled": true,
-    "model": "JODELL EPG40-050",
-    "model_code": "EPG40-050-0PF-L200-C7-N-A-P40-S00",
-    "voltage_v": 24,
-    "max_current_a": 0.85,
-    "communication_protocol": "RS485",
-    "matching_cable": "M12-5FA-S5-5000-P",
-    "interface": "tool_end",
-    "enable_gripper_motion": true,
-    "allow_raw_xmlrpc_gripper": true,
-    "index": 1,
-    "company": 1,
-    "device": 5,
-    "softversion": 0,
-    "bus": 0,
-    "open_pos": 100,
-    "close_pos": 20,
-    "test_vel": 10,
-    "test_force": 10,
-    "max_time_ms": 5000,
-    "block": 0,
-    "type": 0,
-    "rot_num": 0,
-    "rot_vel": 0,
-    "rot_torque": 0,
-    "tool_end_lua": {
-      "configure_before_test": false,
-      "baud_rate_code": 7,
-      "data_bit": 8,
-      "stop_bit": 1,
-      "verify": 0,
-      "timeout_ms": 5,
-      "timeout_times": 3,
-      "period_ms": 1000,
-      "enable_lua": true,
-      "force_sensor_enable": 0,
-      "gripper_enable": 1,
-      "io_enable": 0,
-      "enable_gripper_func": true,
-      "gripper_func": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    }
   }
 }
 ```
@@ -758,66 +704,6 @@ Response:
 }
 ```
 
-## Gripper
-
-### GET /gripper/status
-
-Response:
-
-```json
-{
-  "connected": true,
-  "config": [0, 4, 0, 0, 0],
-  "snapshot": {
-    "position": [0, 0, 50]
-  }
-}
-```
-
-### POST /gripper/open
-
-Body:
-
-```json
-{
-  "pos": 100,
-  "vel": 20,
-  "force": 20
-}
-```
-
-Response mẫu:
-
-```json
-{
-  "enable_gripper_motion": true,
-  "allow_raw_xmlrpc_gripper": true,
-  "result": 0
-}
-```
-
-### POST /gripper/close
-
-Body:
-
-```json
-{
-  "pos": 20,
-  "vel": 20,
-  "force": 20
-}
-```
-
-Response mẫu:
-
-```json
-{
-  "enable_gripper_motion": true,
-  "allow_raw_xmlrpc_gripper": true,
-  "result": 0
-}
-```
-
 ## Map nhanh cho frontend
 
 - Dùng `GET /config` để load toàn bộ state ban đầu.
@@ -825,4 +711,3 @@ Response mẫu:
 - Dùng `POST /trajectory/*/preview` để preview data trước khi chạy robot.
 - Dùng `POST /robot/*` cho motion thật hoặc kiểm tra robot.
 - Dùng `POST /safety/*` để validate trước khi gửi motion.
-- Dùng `POST /gripper/open` và `POST /gripper/close` để điều khiển gripper.

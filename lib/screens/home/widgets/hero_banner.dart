@@ -18,10 +18,7 @@ class HeroBanner extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            Color(0xFF3B0B14),
-          ],
+          colors: [AppColors.primary, Color(0xFF3B0B14)],
         ),
         boxShadow: AppStyles.cardShadow,
       ),
@@ -33,7 +30,10 @@ class HeroBanner extends StatelessWidget {
             children: [
               // Sparkles / Event announcement badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0,
+                  vertical: 6.0,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(100.0),
@@ -44,7 +44,7 @@ class HeroBanner extends StatelessWidget {
                     const Icon(Icons.star, color: AppColors.gold, size: 14.0),
                     const SizedBox(width: 6.0),
                     Text(
-                      "$eventName · Khu trải nghiệm CalliBot",
+                      "$eventName · Khu trải nghiệm Robot Ông Đồ",
                       style: const TextStyle(
                         fontSize: 11.0,
                         fontWeight: FontWeight.bold,
@@ -79,12 +79,16 @@ class HeroBanner extends StatelessWidget {
 
               // Helpful tip box
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14.0,
+                  vertical: 10.0,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.gold.withValues(alpha: 0.95),
                   borderRadius: AppStyles.radiusSm,
                 ),
-                child: Row(  // removed unnecessary const
+                child: Row(
+                  // removed unnecessary const
                   mainAxisSize: MainAxisSize.min,
                   children: const [
                     Icon(Icons.info, color: AppColors.ink, size: 16.0),
@@ -110,7 +114,10 @@ class HeroBanner extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
               borderRadius: AppStyles.radiusLg,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.0),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1.0,
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -143,9 +150,13 @@ class HeroBanner extends StatelessWidget {
                       borderRadius: AppStyles.radiusSm,
                       boxShadow: AppStyles.cardShadow,
                     ),
-                    child: const Icon(Icons.brush, color: Colors.white, size: 18.0),
+                    child: const Icon(
+                      Icons.brush,
+                      color: Colors.white,
+                      size: 18.0,
+                    ),
                   ),
-                )
+                ),
               ],
             ),
           );
@@ -163,11 +174,7 @@ class HeroBanner extends StatelessWidget {
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              content,
-              const SizedBox(height: 20.0),
-              scrollMock,
-            ],
+            children: [content, const SizedBox(height: 20.0), scrollMock],
           );
         },
       ),

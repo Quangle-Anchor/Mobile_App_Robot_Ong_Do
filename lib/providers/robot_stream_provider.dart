@@ -18,6 +18,7 @@ class RobotStreamProvider extends ChangeNotifier {
   // ── Tiến độ viết ──
   double _drawingProgress = 0.0;
   int _activeStepIndex = -1; // -1 = không đang viết
+  Map<String, dynamic>? _lastActionResult;
 
   // ── Config được load từ API ──
   Map<String, dynamic> _configData = {};
@@ -25,7 +26,7 @@ class RobotStreamProvider extends ChangeNotifier {
   // ── Thông tin sự kiện (cấu hình local) ──
   String _eventName = 'Ngày hội tuyển sinh 2026';
   String _eventLocation = 'Sảnh chính';
-  String _eventBooth = 'Khu trải nghiệm CalliBot';
+  String _eventBooth = 'Khu trải nghiệm Robot Ông Đồ';
 
   // ── Stream subscription từ service ──
   StreamSubscription<String>? _msgSub;
@@ -40,10 +41,13 @@ class RobotStreamProvider extends ChangeNotifier {
   bool get isConnected => _isConnected;
   String get statusMessage => _statusMessage;
   String get robotIp => _robotIp;
+  String get backendUrl => _robotService.baseUrl;
   List<dynamic> get tcpPose => _tcpPose;
   List<dynamic> get errorCode => _errorCode;
   double get drawingProgress => _drawingProgress;
   int get activeStepIndex => _activeStepIndex;
+  bool get isBusy => _activeStepIndex != -1;
+  Map<String, dynamic>? get lastActionResult => _lastActionResult;
   Map<String, dynamic> get configData => _configData;
   String get eventName => _eventName;
   String get eventLocation => _eventLocation;
@@ -51,15 +55,13 @@ class RobotStreamProvider extends ChangeNotifier {
 
   // Giữ tương thích với màn hình cũ (robotId, inkLevel, isPaperPresent)
   String get robotId => _configData['robot_ip'] ?? _robotIp;
-  double get inkLevel => 1.0; // gripper không có ink metric, giữ full
+  double get inkLevel => 1.0; // legacy UI metric, giữ full
   bool get isPaperPresent => true;
 
   // ── Step labels cho timeline ──
   final List<String> stepLabels = [
     'Nhận lệnh từ ứng dụng',
-    'Cố định giấy',
     'Robot viết chữ',
-    'Thả giấy',
     'Hoàn tất',
   ];
 
@@ -136,7 +138,7 @@ class RobotStreamProvider extends ChangeNotifier {
 
   void setBaseUrl(String url) {
     _robotService.setBaseUrl(url);
-    _robotIp = url.replaceAll(RegExp(r'^https?://'), '');
+    _robotIp = _robotService.baseUrl.replaceAll(RegExp(r'^https?://'), '');
     notifyListeners();
     _pollStatus();
   }
@@ -146,12 +148,49 @@ class RobotStreamProvider extends ChangeNotifier {
     return ok;
   }
 
+  Future<bool> checkRobotConnection() async {
+    await _pollStatus();
+    return _isConnected;
+  }
+
+  bool _statusFlag(dynamic value) {
+    if (value == true) return true;
+    if (value is num) return value != 0;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
+  }
+
+  bool _isRobotStatusConnected(Map<String, dynamic> status) {
+    return _statusFlag(status['connected']) || _statusFlag(status['xmlrpc_ok']);
+  }
+
+  Future<Map<String, dynamic>> _fetchBestRobotStatus() async {
+    final status = await _robotService.fetchRobotStatus();
+    if (_isRobotStatusConnected(status)) return status;
+
+    try {
+      final rawStatus = await _robotService.fetchRawRobotStatus();
+      if (_isRobotStatusConnected(rawStatus)) {
+        return {...status, ...rawStatus, 'connected': true};
+      }
+    } catch (e) {
+      debugPrint('Raw robot status fallback error: $e');
+    }
+
+    return status;
+  }
+
   Future<void> _pollStatus() async {
     if (_activeStepIndex != -1) return; // Không poll khi đang viết
     try {
-      final status = await _robotService.fetchRobotStatus();
+      final status = await _fetchBestRobotStatus();
       final wasConnected = _isConnected;
-      _isConnected = status['connected'] == true;
+      _isConnected = _isRobotStatusConnected(status);
+      if (status['robot_ip'] is String) {
+        _robotIp = status['robot_ip'] as String;
+      } else if (status['controller_ip'] is String) {
+        _robotIp = status['controller_ip'] as String;
+      }
       _tcpPose = (status['tcp_pose'] as List?) ?? _tcpPose;
       _errorCode = (status['error_code'] as List?) ?? _errorCode;
 
@@ -189,6 +228,140 @@ class RobotStreamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, dynamic>?> previewTypedText(
+    String text, {
+    bool continuous = false,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      _statusMessage = 'Vui lòng nhập chữ cần preview';
+      notifyListeners();
+      return null;
+    }
+
+    try {
+      _statusMessage = 'Đang tạo preview chữ "$trimmed"...';
+      notifyListeners();
+      final result = await _robotService.previewText(
+        trimmed,
+        continuous: continuous,
+      );
+      _lastActionResult = result;
+      final strokeCount = result['stroke_count'] ?? '-';
+      final poseCount = (result['poses'] as List?)?.length ?? '-';
+      _statusMessage =
+          'Preview chữ "$trimmed": $strokeCount nét, $poseCount pose';
+      notifyListeners();
+      return result;
+    } catch (e) {
+      _statusMessage =
+          'Lỗi preview chữ: ${e.toString().replaceAll('Exception: ', '')}';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> previewShape(String shapeName) async {
+    try {
+      _statusMessage = 'Đang tạo preview hình "$shapeName"...';
+      notifyListeners();
+      final result = await _robotService.previewShape(shapeName);
+      _lastActionResult = result;
+      final poseCount = (result['poses'] as List?)?.length ?? '-';
+      _statusMessage = 'Preview hình "$shapeName": $poseCount pose';
+      notifyListeners();
+      return result;
+    } catch (e) {
+      _statusMessage =
+          'Lỗi preview hình: ${e.toString().replaceAll('Exception: ', '')}';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> drawTypedText(
+    String text, {
+    bool continuous = false,
+    double vel = 12,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      _statusMessage = 'Vui lòng nhập chữ cần viết';
+      notifyListeners();
+      return;
+    }
+
+    await _runDirectRobotAction(
+      startMessage: 'Robot đang viết "$trimmed"...',
+      doneMessage: 'Hoàn tất viết "$trimmed"',
+      action: () =>
+          _robotService.drawText(trimmed, vel: vel, continuous: continuous),
+    );
+  }
+
+  Future<void> drawShapeByName(String shapeName, {double vel = 20}) async {
+    await _runDirectRobotAction(
+      startMessage: 'Robot đang vẽ "$shapeName"...',
+      doneMessage: 'Hoàn tất vẽ "$shapeName"',
+      action: () => _robotService.drawShape(shapeName, vel: vel),
+    );
+  }
+
+  Future<void> drawMeasuredLine({double vel = 20}) async {
+    await _runDirectRobotAction(
+      startMessage: 'Robot đang vẽ đường thẳng theo vùng giấy...',
+      doneMessage: 'Hoàn tất vẽ đường thẳng',
+      action: () => _robotService.drawLine(vel: vel),
+    );
+  }
+
+  Future<void> drawMeasuredCircle({double vel = 20}) async {
+    await _runDirectRobotAction(
+      startMessage: 'Robot đang vẽ hình tròn theo vùng giấy...',
+      doneMessage: 'Hoàn tất vẽ hình tròn',
+      action: () => _robotService.drawCircle(vel: vel),
+    );
+  }
+
+  Future<void> _runDirectRobotAction({
+    required String startMessage,
+    required String doneMessage,
+    required Future<Map<String, dynamic>> Function() action,
+  }) async {
+    if (_activeStepIndex != -1) return;
+
+    if (!_isConnected) {
+      await _pollStatus();
+    }
+    if (!_isConnected) {
+      _statusMessage = 'Lỗi: Robot chưa kết nối';
+      notifyListeners();
+      return;
+    }
+
+    _activeStepIndex = 0;
+    _drawingProgress = 0.05;
+    _statusMessage = startMessage;
+    notifyListeners();
+
+    try {
+      final result = await action();
+      _lastActionResult = result;
+      _drawingProgress = 1.0;
+      _statusMessage = doneMessage;
+      notifyListeners();
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      _drawingProgress = 0.0;
+      _statusMessage = 'Lỗi: ${e.toString().replaceAll('Exception: ', '')}';
+      notifyListeners();
+    } finally {
+      _activeStepIndex = -1;
+      notifyListeners();
+      unawaited(_pollStatus());
+    }
+  }
+
   // ────────────────────────────────────────────────
   // Write Sequence (thật)
   // ────────────────────────────────────────────────
@@ -215,16 +388,8 @@ class RobotStreamProvider extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 400));
       if (_activeStepIndex == -1) return;
 
-      // ── Step 1: Cố định giấy (đóng gripper) ──
+      // ── Step 1: Viết chữ ──
       _activeStepIndex = 1;
-      notifyListeners();
-      await _robotService.closeGripper();
-      if (_activeStepIndex == -1) return;
-      _drawingProgress = 0.15;
-      notifyListeners();
-
-      // ── Step 2: Viết chữ ──
-      _activeStepIndex = 2;
       notifyListeners();
       _statusMessage = 'Robot đang viết chữ "${character.char}"...';
       _drawingProgress = 0.2;
@@ -237,16 +402,8 @@ class RobotStreamProvider extends ChangeNotifier {
       _drawingProgress = 0.85;
       notifyListeners();
 
-      // ── Step 3: Thả giấy (mở gripper) ──
-      _activeStepIndex = 3;
-      notifyListeners();
-      await _robotService.openGripper();
-      if (_activeStepIndex == -1) return;
-      _drawingProgress = 0.95;
-      notifyListeners();
-
-      // ── Step 4: Hoàn tất ──
-      _activeStepIndex = 4;
+      // ── Step 2: Hoàn tất ──
+      _activeStepIndex = 2;
       _drawingProgress = 1.0;
       _statusMessage = 'Hoàn tất viết chữ "${character.char}"!';
       notifyListeners();

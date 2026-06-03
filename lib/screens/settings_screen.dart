@@ -29,15 +29,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.didChangeDependencies();
     if (_isInit) {
       _isInit = false;
-      final robotProvider =
-          Provider.of<RobotStreamProvider>(context, listen: false);
-      _eventNameController =
-          TextEditingController(text: robotProvider.eventName);
-      _locationController =
-          TextEditingController(text: robotProvider.eventLocation);
+      final robotProvider = Provider.of<RobotStreamProvider>(
+        context,
+        listen: false,
+      );
+      _eventNameController = TextEditingController(
+        text: robotProvider.eventName,
+      );
+      _locationController = TextEditingController(
+        text: robotProvider.eventLocation,
+      );
       _boothController = TextEditingController(text: robotProvider.eventBooth);
-      _robotUrlController =
-          TextEditingController(text: 'http://localhost:8000');
+      _robotUrlController = TextEditingController(
+        text: robotProvider.backendUrl,
+      );
     }
   }
 
@@ -59,15 +64,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Cập nhật base URL từ input
     robotProvider.setBaseUrl(_robotUrlController.text.trim());
 
-    final ok = await robotProvider.checkHealth();
-    await robotProvider.refreshStatus();
+    final backendOk = await robotProvider.checkHealth();
+    final robotOk = backendOk
+        ? await robotProvider.checkRobotConnection()
+        : false;
 
     setState(() {
       _isCheckingConnection = false;
-      _connectionSuccess = ok;
-      _connectionResult = ok
-          ? '✓ Kết nối thành công đến ${_robotUrlController.text.trim()}'
-          : '✗ Không thể kết nối đến ${_robotUrlController.text.trim()}';
+      _connectionSuccess = robotOk;
+      if (robotOk) {
+        _connectionResult =
+            '✓ Robot đã kết nối qua ${_robotUrlController.text.trim()}';
+      } else if (backendOk) {
+        _connectionResult =
+            '✗ Backend hoạt động nhưng robot đang ngoại tuyến. Kiểm tra robot_ip hoặc /robot/status.';
+      } else {
+        _connectionResult =
+            '✗ Không thể kết nối đến ${_robotUrlController.text.trim()}';
+      }
     });
   }
 
@@ -75,8 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       decoration: const BoxDecoration(
-        border:
-            Border(bottom: BorderSide(color: AppColors.border, width: 1.0)),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1.0)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -88,8 +101,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget buildTextInput(String label, TextEditingController controller,
-      {String? hint}) {
+  Widget buildTextInput(
+    String label,
+    TextEditingController controller, {
+    String? hint,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12.0),
       child: Column(
@@ -98,9 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             label,
             style: const TextStyle(
-                fontSize: 12.0,
-                fontWeight: FontWeight.bold,
-                color: AppColors.ink),
+              fontSize: 12.0,
+              fontWeight: FontWeight.bold,
+              color: AppColors.ink,
+            ),
           ),
           const SizedBox(height: 6.0),
           TextField(
@@ -110,7 +127,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               hintText: hint,
               hintStyle: TextStyle(color: AppColors.muted, fontSize: 13.0),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14.0, vertical: 12.0),
+                horizontal: 14.0,
+                vertical: 12.0,
+              ),
               filled: true,
               fillColor: AppColors.secondary.withValues(alpha: 0.3),
               border: OutlineInputBorder(
@@ -122,7 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderSide: const BorderSide(color: AppColors.primary),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -142,10 +161,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Text(
             'THÔNG TIN SỰ KIỆN',
             style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: AppColors.muted,
-                letterSpacing: 0.8),
+              fontSize: 11.5,
+              fontWeight: FontWeight.bold,
+              color: AppColors.muted,
+              letterSpacing: 0.8,
+            ),
           ),
           const SizedBox(height: 16.0),
           buildTextInput('Tên sự kiện', _eventNameController),
@@ -163,10 +183,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Text(
             'CẤU HÌNH ROBOT',
             style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: AppColors.muted,
-                letterSpacing: 0.8),
+              fontSize: 11.5,
+              fontWeight: FontWeight.bold,
+              color: AppColors.muted,
+              letterSpacing: 0.8,
+            ),
           ),
           const SizedBox(height: 16.0),
 
@@ -176,14 +197,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               robotProvider.robotIp,
               style: const TextStyle(
-                  fontFamily: 'Courier', fontWeight: FontWeight.bold),
+                fontFamily: 'Courier',
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           buildFieldRow(
             'Trạng thái kết nối',
             StatusBadge(
-                status:
-                    robotProvider.isConnected ? 'Đã kết nối' : 'Ngoại tuyến'),
+              status: robotProvider.isConnected ? 'Đã kết nối' : 'Ngoại tuyến',
+            ),
           ),
           buildFieldRow('Chế độ', const StatusBadge(status: 'Tự động')),
 
@@ -196,9 +219,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ' Y:${(robotProvider.tcpPose[1] as num).toStringAsFixed(1)}'
                 ' Z:${(robotProvider.tcpPose[2] as num).toStringAsFixed(1)}',
                 style: const TextStyle(
-                    fontFamily: 'Courier',
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold),
+                  fontFamily: 'Courier',
+                  fontSize: 12.0,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -218,14 +242,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(10.0),
               decoration: BoxDecoration(
-                color: (_connectionSuccess ? AppColors.success : AppColors.destructive)
-                    .withValues(alpha: 0.08),
+                color:
+                    (_connectionSuccess
+                            ? AppColors.success
+                            : AppColors.destructive)
+                        .withValues(alpha: 0.08),
                 borderRadius: AppStyles.radiusSm,
                 border: Border.all(
-                  color: (_connectionSuccess
-                          ? AppColors.success
-                          : AppColors.destructive)
-                      .withValues(alpha: 0.3),
+                  color:
+                      (_connectionSuccess
+                              ? AppColors.success
+                              : AppColors.destructive)
+                          .withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
@@ -254,7 +282,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       height: 14.0,
                       width: 14.0,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2.0, color: Colors.white),
+                        strokeWidth: 2.0,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.wifi_find_outlined, size: 16.0),
               label: Text(
@@ -265,8 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 backgroundColor: AppColors.tech,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                    borderRadius: AppStyles.radiusMd),
+                shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
               ),
             ),
           ),
@@ -280,9 +309,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const Text(
           'Cài đặt hệ thống',
           style: TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink),
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: AppColors.ink,
+          ),
         ),
         const SizedBox(height: 2.0),
         Text(
@@ -316,18 +346,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Text(
                 'DANH SÁCH CHỮ ĐANG BẬT',
                 style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.muted,
-                    letterSpacing: 0.8),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.muted,
+                  letterSpacing: 0.8,
+                ),
               ),
               const SizedBox(height: 16.0),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:
-                      isDesktop ? 4 : (MediaQuery.of(context).size.width >= 540 ? 2 : 1),
+                  crossAxisCount: isDesktop
+                      ? 4
+                      : (MediaQuery.of(context).size.width >= 540 ? 2 : 1),
                   crossAxisSpacing: 14.0,
                   mainAxisSpacing: 14.0,
                   childAspectRatio: 2.4,
@@ -339,7 +371,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   return CustomCard(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14.0, vertical: 10.0),
+                      horizontal: 14.0,
+                      vertical: 10.0,
+                    ),
                     backgroundColor: isEnabled
                         ? AppColors.primary.withValues(alpha: 0.04)
                         : AppColors.secondary.withValues(alpha: 0.4),
@@ -355,17 +389,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text(
                               c.char,
-                              style: AppStyles.calligraphyStyle
-                                  .copyWith(fontSize: 26.0, height: 1.1),
+                              style: AppStyles.calligraphyStyle.copyWith(
+                                fontSize: 26.0,
+                                height: 1.1,
+                              ),
                             ),
                             const SizedBox(width: 10.0),
                             Text(
                               c.char,
                               style: const TextStyle(
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.ink),
-                            )
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.ink,
+                              ),
+                            ),
                           ],
                         ),
                         Switch(
@@ -376,12 +413,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onChanged: (bool value) {
                             calliProvider.toggleCharacter(c.char);
                           },
-                        )
+                        ),
                       ],
                     ),
                   );
                 },
-              )
+              ),
             ],
           ),
         ),
@@ -396,19 +433,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 calliProvider.resetDefaults();
                 _eventNameController.text = 'Ngày hội tuyển sinh 2026';
                 _locationController.text = 'Sảnh chính';
-                _boothController.text = 'Khu trải nghiệm CalliBot';
+                _boothController.text = 'Khu trải nghiệm Robot Ông Đồ';
                 _robotUrlController.text = 'http://localhost:8000';
                 robotProvider.updateEventDetails(
                   name: 'Ngày hội tuyển sinh 2026',
                   location: 'Sảnh chính',
-                  booth: 'Khu trải nghiệm CalliBot',
+                  booth: 'Khu trải nghiệm Robot Ông Đồ',
                 );
                 setState(() {
                   _connectionResult = null;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text('Đã khôi phục cài đặt mặc định')),
+                    content: Text('Đã khôi phục cài đặt mặc định'),
+                  ),
                 );
               },
               icon: const Icon(Icons.restore, size: 16.0),
@@ -417,9 +455,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 foregroundColor: AppColors.secondaryText,
                 side: const BorderSide(color: AppColors.border),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 16.0),
-                shape: RoundedRectangleBorder(
-                    borderRadius: AppStyles.radiusMd),
+                  horizontal: 20.0,
+                  vertical: 16.0,
+                ),
+                shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
               ),
             ),
             const SizedBox(width: 12.0),
@@ -434,23 +473,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 robotProvider.setBaseUrl(_robotUrlController.text.trim());
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text('Đã lưu các cài đặt thành công')),
+                    content: Text('Đã lưu các cài đặt thành công'),
+                  ),
                 );
               },
               icon: const Icon(Icons.save_outlined, size: 16.0),
-              label: const Text('Lưu cài đặt',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Lưu cài đặt',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 16.0),
-                shape: RoundedRectangleBorder(
-                    borderRadius: AppStyles.radiusMd),
+                  horizontal: 20.0,
+                  vertical: 16.0,
+                ),
+                shape: RoundedRectangleBorder(borderRadius: AppStyles.radiusMd),
               ),
             ),
           ],
-        )
+        ),
       ],
     );
   }

@@ -25,12 +25,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String baseFontFamily = (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
+    final String baseFontFamily =
+        (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows)
         ? 'Segoe UI'
         : 'Georgia';
 
     return MaterialApp(
-      title: 'CalliBot',
+      title: 'Robot Ông Đồ',
       debugShowCheckedModeBanner: false,
 
       // Beautiful Custom Theme settings mapping the design tokens from styles.css
@@ -46,7 +47,8 @@ class MyApp extends StatelessWidget {
         ),
 
         // Premium default component themes
-        cardTheme: CardThemeData( // CardTheme → CardThemeData
+        cardTheme: CardThemeData(
+          // CardTheme → CardThemeData
           color: AppColors.card,
           elevation: 2.0,
           shape: RoundedRectangleBorder(
