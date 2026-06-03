@@ -527,6 +527,37 @@ Response mẫu:
 }
 ```
 
+### POST /robot/draw/text/outline
+
+Viết chữ nhập từ bàn phím theo dạng outline font Times New Roman.
+
+Body:
+
+```json
+{
+  "text": "Happy New Year",
+  "continuous": false,
+  "vel": 12
+}
+```
+
+Response mẫu:
+
+```json
+{
+  "source": "Happy New Year",
+  "stroke_count": 12,
+  "pose_count": 320,
+  "planned_pose_count": 300,
+  "font_family": "Times New Roman",
+  "text_mode": "outline",
+  "motion_mode": "smooth",
+  "enable_move": true,
+  "allow_raw_xmlrpc_motion": true,
+  "result": []
+}
+```
+
 ### POST /robot/draw/paper_corners
 
 Body:
@@ -635,6 +666,32 @@ Response:
   "text": "Tam",
   "continuous": true,
   "stroke_count": 2,
+  "poses": [[0, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0]]
+}
+```
+
+### POST /trajectory/text/outline/preview
+
+Preview chữ nhập từ bàn phím theo dạng outline font Times New Roman.
+
+Body:
+
+```json
+{
+  "text": "Happy New Year",
+  "continuous": false
+}
+```
+
+Response:
+
+```json
+{
+  "text": "Happy New Year",
+  "continuous": false,
+  "font_family": "Times New Roman",
+  "text_mode": "outline",
+  "stroke_count": 12,
   "poses": [[0, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0]]
 }
 ```

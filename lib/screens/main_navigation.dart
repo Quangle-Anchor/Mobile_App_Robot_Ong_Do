@@ -5,6 +5,7 @@ import '../constants/app_styles.dart';
 import '../providers/robot_stream_provider.dart';
 import 'progress_flow_screen.dart';
 import 'shape_drawing_screen.dart';
+import 'outline_text_screen.dart';
 import 'history_screen.dart';
 import 'dashboard_screen.dart';
 import 'settings_screen.dart';
@@ -32,12 +33,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       case 0:
         return "Tiến trình viết";
       case 1:
-        return "Vẽ hình";
+        return "Kiểu vẽ hình và viết chữ nhập từ bàn phím";
       case 2:
-        return "Lịch sử viết thư pháp";
+        return "Viết chữ outline";
       case 3:
-        return "Dashboard Robot Ông Đồ";
+        return "Lịch sử viết thư pháp";
       case 4:
+        return "Dashboard Robot Ông Đồ";
+      case 5:
         return "Cài đặt hệ thống";
       default:
         return "Robot Ông Đồ";
@@ -53,6 +56,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final List<Widget> screens = [
       ProgressFlowScreen(onNavigateOutside: setIndex),
       const ShapeDrawingScreen(),
+      const OutlineTextScreen(),
       const HistoryScreen(),
       const DashboardScreen(),
       const SettingsScreen(),
@@ -61,7 +65,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     // Navigation Menu Items mapping AppLayout.tsx
     final List<Map<String, dynamic>> menuItems = [
       {"label": "Tiến trình viết", "icon": Icons.timeline},
-      {"label": "Vẽ hình", "icon": Icons.category_outlined},
+      {"label": "Kiểu vẽ hình & chữ nhập", "icon": Icons.category_outlined},
+      {"label": "Viết outline", "icon": Icons.title},
       {"label": "Lịch sử", "icon": Icons.history_rounded},
       {"label": "Dashboard", "icon": Icons.dashboard_outlined},
       {"label": "Cài đặt", "icon": Icons.settings_outlined},
@@ -504,7 +509,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: !isDesktop
           ? BottomNavigationBar(
               currentIndex: _currentIndex >= 4
-                  ? 3
+                  ? 4
                   : _currentIndex, // Collapse complex views on mobile bottom bar
               onTap: (index) {
                 setIndex(index);
@@ -525,7 +530,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.category_outlined),
-                  label: "Vẽ hình",
+                  label: "Vẽ & chữ",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.title),
+                  label: "Outline",
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.history_rounded),

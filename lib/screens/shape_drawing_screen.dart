@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_styles.dart';
 import '../providers/robot_stream_provider.dart';
 import '../widgets/custom_card.dart';
+import '../widgets/trajectory_preview_card.dart';
 
 class ShapeDrawingScreen extends StatefulWidget {
   const ShapeDrawingScreen({super.key});
@@ -14,6 +15,7 @@ class ShapeDrawingScreen extends StatefulWidget {
 
 class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
   final TextEditingController _textController = TextEditingController();
+  Map<String, dynamic>? _lastResult;
   bool _continuousText = false;
   double _textVelocity = 12;
   double _shapeVelocity = 20;
@@ -50,7 +52,7 @@ class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Viết chữ và vẽ hình',
+          'Kiểu vẽ hình và viết chữ nhập từ bàn phím',
           style: TextStyle(
             fontSize: 24.0,
             fontWeight: FontWeight.bold,
@@ -59,7 +61,7 @@ class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
         ),
         const SizedBox(height: 8.0),
         Text(
-          'Nhập chữ từ bàn phím hoặc chọn hình để gửi trực tiếp đến backend robot-ong-do.',
+          'Nhập chữ theo cấu hình hiện tại hoặc chọn hình cơ bản để gửi trực tiếp đến backend robot-ong-do.',
           style: TextStyle(fontSize: 14.0, color: AppColors.muted),
         ),
         const SizedBox(height: 24.0),
@@ -81,12 +83,31 @@ class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
             return _buildShapeCard(robotProvider, _shapeActions[index]);
           },
         ),
-        if (robotProvider.lastActionResult != null) ...[
+        if (_lastResult != null) ...[
           const SizedBox(height: 24.0),
-          _buildLastResult(robotProvider.lastActionResult!),
+          _buildLastResult(_lastResult!),
         ],
       ],
     );
+  }
+
+  Future<void> _captureLastResult(
+    RobotStreamProvider provider,
+    Future<void> Function() action,
+  ) async {
+    await action();
+    if (!mounted) return;
+    setState(() => _lastResult = provider.lastActionResult);
+  }
+
+  Future<void> _previewText(RobotStreamProvider provider) async {
+    final result = await provider.previewTypedText(
+      _textController.text,
+      continuous: _continuousText,
+      outlineTimes: false,
+    );
+    if (!mounted) return;
+    setState(() => _lastResult = result);
   }
 
   Widget _buildTextCommand(RobotStreamProvider provider) {
@@ -174,20 +195,21 @@ class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
               OutlinedButton.icon(
                 onPressed: provider.isBusy
                     ? null
-                    : () => provider.previewTypedText(
-                        _textController.text,
-                        continuous: _continuousText,
-                      ),
+                    : () => _previewText(provider),
                 icon: const Icon(Icons.visibility_outlined, size: 16.0),
                 label: const Text('Preview đường viết'),
               ),
               ElevatedButton.icon(
                 onPressed: provider.isBusy
                     ? null
-                    : () => provider.drawTypedText(
-                        _textController.text,
-                        continuous: _continuousText,
-                        vel: _textVelocity,
+                    : () => _captureLastResult(
+                        provider,
+                        () => provider.drawTypedText(
+                          _textController.text,
+                          continuous: _continuousText,
+                          vel: _textVelocity,
+                          outlineTimes: false,
+                        ),
                       ),
                 icon: provider.isBusy
                     ? const SizedBox(
@@ -328,15 +350,24 @@ class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
                 tooltip: 'Preview',
                 onPressed: provider.isBusy
                     ? null
-                    : () => provider.previewShape(action.backendName),
+                    : () async {
+                        final result = await provider.previewShape(
+                          action.backendName,
+                        );
+                        if (!mounted) return;
+                        setState(() => _lastResult = result);
+                      },
                 icon: const Icon(Icons.visibility_outlined, size: 18.0),
               ),
               ElevatedButton.icon(
                 onPressed: provider.isBusy
                     ? null
-                    : () => provider.drawShapeByName(
-                        action.backendName,
-                        vel: _shapeVelocity,
+                    : () => _captureLastResult(
+                        provider,
+                        () => provider.drawShapeByName(
+                          action.backendName,
+                          vel: _shapeVelocity,
+                        ),
                       ),
                 icon: const Icon(Icons.play_arrow_rounded, size: 17.0),
                 label: const Text('Vẽ'),
@@ -353,44 +384,7 @@ class _ShapeDrawingScreenState extends State<ShapeDrawingScreen> {
   }
 
   Widget _buildLastResult(Map<String, dynamic> result) {
-    final strokeCount = result['stroke_count'];
-    final poseCount =
-        result['pose_count'] ?? (result['poses'] as List?)?.length;
-    final plannedPoseCount = result['planned_pose_count'];
-    final motionMode = result['motion_mode'];
-
-    return CustomCard(
-      backgroundColor: AppColors.secondary.withValues(alpha: 0.35),
-      child: Wrap(
-        spacing: 24.0,
-        runSpacing: 10.0,
-        children: [
-          _buildResultMetric('Số nét', strokeCount),
-          _buildResultMetric('Số pose', poseCount),
-          _buildResultMetric('Pose dự kiến', plannedPoseCount),
-          _buildResultMetric('Motion mode', motionMode),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultMetric(String label, Object? value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: TextStyle(fontSize: 11.0, color: AppColors.muted)),
-        const SizedBox(height: 3.0),
-        Text(
-          value?.toString() ?? '-',
-          style: const TextStyle(
-            fontSize: 14.0,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ],
-    );
+    return TrajectoryPreviewCard(result: result);
   }
 }
 

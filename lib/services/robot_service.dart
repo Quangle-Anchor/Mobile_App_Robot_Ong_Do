@@ -178,6 +178,26 @@ class RobotService {
     return result;
   }
 
+  Future<Map<String, dynamic>> drawTextOutlineTimes(
+    String text, {
+    double vel = 12,
+    bool continuous = false,
+  }) async {
+    _robotStatusMessageController.add(
+      'Bắt đầu viết outline Times New Roman "$text"...',
+    );
+    final result = await _post('/robot/draw/text/outline', {
+      'text': text,
+      'continuous': continuous,
+      'vel': vel,
+    }, const Duration(minutes: 10));
+    _robotStatusMessageController.add(
+      'Đã viết xong outline Times New Roman "$text"',
+    );
+    _connectionController.add(true);
+    return result;
+  }
+
   Future<Map<String, dynamic>> drawShape(
     String shapeName, {
     double vel = 20,
@@ -214,6 +234,16 @@ class RobotService {
     bool continuous = false,
   }) async {
     return _post('/trajectory/text/preview', {
+      'text': text,
+      'continuous': continuous,
+    });
+  }
+
+  Future<Map<String, dynamic>> previewTextOutlineTimes(
+    String text, {
+    bool continuous = false,
+  }) async {
+    return _post('/trajectory/text/outline/preview', {
       'text': text,
       'continuous': continuous,
     });

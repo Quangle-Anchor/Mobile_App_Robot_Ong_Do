@@ -231,6 +231,7 @@ class RobotStreamProvider extends ChangeNotifier {
   Future<Map<String, dynamic>?> previewTypedText(
     String text, {
     bool continuous = false,
+    bool outlineTimes = false,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
@@ -240,17 +241,20 @@ class RobotStreamProvider extends ChangeNotifier {
     }
 
     try {
-      _statusMessage = 'Đang tạo preview chữ "$trimmed"...';
+      final modeLabel = outlineTimes ? 'outline Times New Roman' : 'chữ';
+      _statusMessage = 'Đang tạo preview $modeLabel "$trimmed"...';
       notifyListeners();
-      final result = await _robotService.previewText(
-        trimmed,
-        continuous: continuous,
-      );
+      final result = outlineTimes
+          ? await _robotService.previewTextOutlineTimes(
+              trimmed,
+              continuous: continuous,
+            )
+          : await _robotService.previewText(trimmed, continuous: continuous);
       _lastActionResult = result;
       final strokeCount = result['stroke_count'] ?? '-';
       final poseCount = (result['poses'] as List?)?.length ?? '-';
       _statusMessage =
-          'Preview chữ "$trimmed": $strokeCount nét, $poseCount pose';
+          'Preview $modeLabel "$trimmed": $strokeCount nét, $poseCount pose';
       notifyListeners();
       return result;
     } catch (e) {
@@ -283,6 +287,7 @@ class RobotStreamProvider extends ChangeNotifier {
     String text, {
     bool continuous = false,
     double vel = 12,
+    bool outlineTimes = false,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
@@ -291,11 +296,17 @@ class RobotStreamProvider extends ChangeNotifier {
       return;
     }
 
+    final modeLabel = outlineTimes ? 'outline Times New Roman' : 'chữ';
     await _runDirectRobotAction(
-      startMessage: 'Robot đang viết "$trimmed"...',
-      doneMessage: 'Hoàn tất viết "$trimmed"',
-      action: () =>
-          _robotService.drawText(trimmed, vel: vel, continuous: continuous),
+      startMessage: 'Robot đang viết $modeLabel "$trimmed"...',
+      doneMessage: 'Hoàn tất viết $modeLabel "$trimmed"',
+      action: () => outlineTimes
+          ? _robotService.drawTextOutlineTimes(
+              trimmed,
+              vel: vel,
+              continuous: continuous,
+            )
+          : _robotService.drawText(trimmed, vel: vel, continuous: continuous),
     );
   }
 
